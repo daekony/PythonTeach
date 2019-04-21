@@ -7,6 +7,9 @@
     </head>
     <body>
         {% include 'blog/nav_accounts.html' %}
-        <h1>這是首頁 {{ msg }}</h1>
+        <div class="container">
+            <h1>{{ article.title}} by {{ article.author }}({{ article.createTime }})</h1>
+            <p>{{ article.content }}</p>
+        </div>
     </body>
 </html>

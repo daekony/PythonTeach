@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 
+{% load crispy_forms_tags %}
+
 <html>
     <head>
         <title>Index</title>
@@ -7,6 +9,14 @@
     </head>
     <body>
         {% include 'blog/nav_accounts.html' %}
-        <h1>這是首頁 {{ msg }}</h1>
+        <div class="container">
+            <h1>新增文章</h1>
+            <p>{{ msg }}</p>
+            <form method="POST" action=".">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <input class="btn btn-primary" type="submit">
+            </form>
+        </div>
     </body>
 </html>
