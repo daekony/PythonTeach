@@ -10,7 +10,7 @@
         <div class="container">
             <h1>這是 Login 頁</h1>
 
-            <form method="POST" action=".">
+            <form method="POST" action="{{ request.get_full_path }}">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="name">Username</label>

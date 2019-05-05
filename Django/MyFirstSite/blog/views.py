@@ -5,8 +5,11 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.urls import reverse_lazy
 from django.http import HttpResponse
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
-from blog.models import Comment
+from blog.models import Comment, Article
 
 # Create your views here.
 
@@ -80,6 +83,9 @@ class LoginView(generic.View):
         if user and user.is_active: # 判斷 user 是否存在，且沒有被凍結
             # 允許登入
             auth.login(request, user)
+            if request.GET.get('next'):
+                # 當有 next 參數時，幫忙導頁
+                return redirect(request.GET.get('next'))
             return redirect(reverse_lazy('index')) # 進行導頁到 index
         else:     
             # 不允許登入
@@ -121,6 +127,8 @@ def register(request):
 
 from blog.forms import ArticleForm
 
+
+@login_required
 def createArticle(request):
     context = {}
     if request.POST:
@@ -144,6 +152,7 @@ def createArticle(request):
         
     return render(request, 'blog/article-add.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class ArticleCreateView(generic.FormView):
     form_class =  ArticleForm
     template_name = 'blog/article-add.html'
@@ -156,7 +165,6 @@ class ArticleCreateView(generic.FormView):
         article = form.save(commit=False) 
         article.author = self.request.user # 紀錄是誰 create 這個 article 的
         article.save() # 紀錄到 db 去
-
         return super().form_valid(form)
 
     # 可不寫
@@ -165,7 +173,47 @@ class ArticleCreateView(generic.FormView):
         # do something
         return super().form_invalid(form)
 
-from blog.models import Article
+@method_decorator(login_required, name='dispatch')
+class ArticleCreateView(generic.CreateView):
+    template_name = 'blog/article-add.html'
+    success_url = reverse_lazy('article-add')
+    form_class =  ArticleForm
+
+    def form_valid(self, form):
+        article = form.save(commit=False) 
+        article.author = self.request.user 
+        article.save()
+        messages.success(self.request, '成功新增了文章')
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, '表單填寫錯誤')
+        return super().form_invalid(form)
+
+class ArticleUpdateView(generic.UpdateView):
+    model = Article
+    template_name = 'blog/article-update.html'
+    form_class = ArticleForm
+
+    def form_valid(self, form):
+        messages.success(self.request, '成功更新了文章')
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, '表單填寫錯誤')
+        return super().form_invalid(form)
+
+    def get_success_url(self):   
+        return reverse_lazy('article-detail', kwargs={'pk': self.object.id,})
+
+class ArticleDeleteView(generic.DeleteView):
+    model = Article
+    success_url = reverse_lazy('article-list')
+    template_name = 'blog/article-delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, '成功刪除了文章')
+        return super().delete(request, *args, **kwargs)
 
 class ArticleList(generic.ListView):
     template_name = 'blog/article-list.html' # 用來 render 的 template 
